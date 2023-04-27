@@ -56,7 +56,7 @@ module.exports.SignUp = async(req,res)=>{
        try{
         await sendEmail({
             to : email ,
-            from : 'anuragpandey192000@gmail.com',
+            from : process.env.EMAIL_ID,
             subject : 'Please verify your Email',
             text :`
                 Thank for signing up ! To verify, click here :
