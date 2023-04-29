@@ -1,6 +1,6 @@
 const express = require("express") ;
 
-const { GoogleCallBack} = require("../controllers/authControllers");
+const { GoogleCallBack, VerificationRedirect} = require("../controllers/authControllers");
 
 const router = express.Router() ;
 
