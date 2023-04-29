@@ -60,7 +60,7 @@ module.exports.SignUp = async(req,res)=>{
             subject : 'Please verify your Email',
             text :`
                 Thank for signing up ! To verify, click here :
-                ${process.env.CLIENT_URL}/verify-email/${verificationString}
+                /verify-email/${verificationString}
             ` 
         });
         console.log("Mail sent !") ;
