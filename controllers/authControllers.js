@@ -60,7 +60,7 @@ module.exports.SignUp = async(req,res)=>{
             subject : 'Please verify your Email',
             text :`
                 Thank for signing up ! To verify, click here :
-                ${process.env.CLIENT_URL}/verify-email/${verificationString}
+                https://auth-eve8.onrender.com//verify-email/${verificationString}
             ` 
         });
         console.log("Mail sent !") ;
@@ -248,7 +248,7 @@ module.exports.forgotPassword = async(req,res)=>{
                     from : 'anuragpandey192000@gmail.com',
                     subject : 'Password Reset',
                     text : `
-                        To reset your password , click the link : http://localhost:3000/reset-password/${passwordResetCode} 
+                        To reset your password , click the link : ${process.env.CLIENT_URL}/${passwordResetCode} 
                     `
                 }); 
             }catch(err){
@@ -331,6 +331,6 @@ module.exports.GoogleCallBack = async(req,res)=>{
 }
 
 module.exports.VerificationRedirect = async(req,res)=>{
-
+    console.log("Verification Route");
     return res.redirect(`${process.env.CLIENT_URL}/verify-email/${req.params.verificationString}`) ;
 }
