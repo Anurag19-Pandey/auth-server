@@ -60,7 +60,7 @@ module.exports.SignUp = async(req,res)=>{
             subject : 'Please verify your Email',
             text :`
                 Thank for signing up ! To verify, click here :
-                /verify-email/${verificationString}
+                ${process.env.CLIENT_URL}/verify-email/${verificationString}
             ` 
         });
         console.log("Mail sent !") ;
@@ -328,4 +328,9 @@ module.exports.GoogleCallBack = async(req,res)=>{
     }catch(err){
         console.log(err) ;
     }
+}
+
+module.exports.VerificationRedirect = async(req,res)=>{
+
+    return res.redirect(`${process.env.CLIENT_URL}/verify-email/${req.params.verificationString}`) ;
 }
