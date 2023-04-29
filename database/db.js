@@ -11,12 +11,6 @@ const connection = async()=>{
 }
 
 
-const getDbConnection = dbName =>{
-    const db = client.db(dbName) ;
-    return db ; 
-}
-
 module.exports = {
-    connection ,
-    getDbConnection
+    connection
 }

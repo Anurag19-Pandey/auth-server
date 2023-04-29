@@ -1,4 +1,3 @@
-const {getDbConnection} = require("../db") ;
 const bcrypt = require("bcrypt") ;
 const jwt = require("jsonwebtoken") ;
 const {ObjectId} = require("mongodb") ;
@@ -7,7 +6,8 @@ const {v4 :uuidv4} = require("uuid") ;
 const getGoogleOAuthUrl = require("../util/getGoogleOAuthUrl");
 const getGoogleUser = require("../util/getGoogleUser") ;
 const updateOrCreateUserFromOAuth = require("../util/updateOrCreateUserFromOAuth") ;
-
+const User = require("../database/models/userModel") ;
+const Otp = require("")
 sendGrid.setApiKey(process.env.SEND_GRID_API_KEY);
 
 const sendEmail = ({to , from, subject , text , html})=>{
@@ -25,12 +25,9 @@ const otpGeneration = async(id) =>{
 
         const otp = `${otp1} + ${otp2} + ${otp3} + ${otp4}` ;
 
-        const db = getDbConnection('auth-database') ;
-
-        const otpAvail = await db.collection('otp').insertOne({
+        const otpAvail = await Otp.insertOne({
             id,
-            otp,
-            expiresIn:Date.getTime() + 10*60000,
+            otp
         }) ;
 
         return otp ;
@@ -41,9 +38,7 @@ module.exports.SignUp = async(req,res)=>{
 
         const {email , password } = req.body ;
 
-        const db = getDbConnection('auth-database') ;
-
-        const user = await db.collection('users').findOne({email}) ;
+        const user = await User.findOne({email}) ;
 
         if(user){
            return res.sendStatus(409) ;  // 409 - conflict error code 
@@ -55,22 +50,17 @@ module.exports.SignUp = async(req,res)=>{
 
         const passwordHash = await bcrypt.hash(salt + password + pepper , 10) ;
 
-        const verificationString = uuidv4() ;
-
         const startingInfo = {
              name : '' ,
              favouriteFood : '',
              bio : ''
         }
 
-        const result = await db.collection('users').insertOne({
+        const result = await User.insertOne({
             email,
             passwordHash,
             salt ,
             info : startingInfo,
-            isVerified : false ,
-            verificationString ,
-            otp : `${otp1}+${otp2}+${otp3}+${otp4}`
         }) ;
         
         const {insertedId} = result ;
@@ -117,9 +107,7 @@ module.exports.Login = async(req,res)=>{
 
         const {email , password} = req.body ;
 
-        const db = getDbConnection('auth-database') ;
-
-        const user = await db.collection('users').findOne({email}) ;
+        const user = await User.findOne({email}) ;
 
         if(!user){
             return res.sendStatus(401) ;
@@ -191,10 +179,8 @@ module.exports.updateUser = async(req,res)=>{
                 return res.status(403).json({message : "Not allowed to update user data."})
             if(!isVerified)
                 return res.status(403).json({message : "You need to verify your email before you can update your data."}) ;
-                
-                const db = getDbConnection('auth-database') ;
 
-                const result = await db.collection('users').findOneAndUpdate(
+                const result = await User.findOneAndUpdate(
                     { _id : new ObjectId(id) },
                     { $set:{  info : updates }},
                     {returnOriginal : false}
@@ -251,12 +237,10 @@ module.exports.verifyEmail = async(req,res)=>{
 module.exports.forgotPassword = async(req,res)=>{
     try{
         const {email} = req.params ;
-       
-        const db = getDbConnection('auth-database') ;
-
+    
         const passwordResetCode = uuidv4() ;
 
-        const result = await db.collection('users').updateOne({email},{
+        const result = await User.updateOne({email},{
             $set : {
                 passwordResetCode
             }
@@ -369,15 +353,15 @@ module.exports.otpVerification = async(req,res)=>{
             
             const {id} = decoded ;
 
-            const otpAvail = await db.collection('otp').findOne({id}) ;
+            const otpAvail = await Otp.findOne({id}) ;
 
             if(otpAvail){
                 const expiresIn = Date.getTime() + 10*60000 ;
 
                 if(otpAvail.expiresIn <= expiresIn){
                     if(otpAvail.otp == otpparams){
-                        const deleteOtp = await db.collection('otp').deleteOne({id});
-                        const result = await db.collection('users').findOneAndUpdate(
+                        const deleteOtp = await Otp.deleteOne({id});
+                        const result = await User.findOneAndUpdate(
                             { _id : new ObjectId(id) },
                             { $set:{  isVerified : true }},
                             {returnOriginal : false}

@@ -1,4 +1,4 @@
-const {getDbConnection} = require("../db") ;
+const {getDbConnection} = require("../database/db") ;
 
 const updateOrCreateUserFromOAuth = async({oauthUserInfo})=>{
     const {
