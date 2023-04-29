@@ -353,6 +353,7 @@ module.exports.GoogleCallBack = async(req,res)=>{
 
 module.exports.otpVerification = async(req,res)=>{
     try{
+        
         const {authorization} = req.headers ;
         const {otpparams} = req.params ;
         
