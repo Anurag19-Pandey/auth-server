@@ -16,6 +16,26 @@ const sendEmail = ({to , from, subject , text , html})=>{
     return sendGrid.send(msg) ;
 }
 
+const otpGeneration = async(id) =>{
+
+        const otp1 = Math.random()*10 ;
+        const otp2 = Math.random()*10 ;
+        const otp3 = Math.random()*10 ;
+        const otp4 = Math.random()*10 ;
+
+        const otp = `${otp1} + ${otp2} + ${otp3} + ${otp4}` ;
+
+        const db = getDbConnection('auth-database') ;
+
+        const otpAvail = await db.collection('otp').insertOne({
+            id,
+            otp,
+            expiresIn:Date.getTime() + 10*60000,
+        }) ;
+
+        return otp ;
+}
+
 module.exports.SignUp = async(req,res)=>{
     try{
 
@@ -49,19 +69,20 @@ module.exports.SignUp = async(req,res)=>{
             salt ,
             info : startingInfo,
             isVerified : false ,
-            verificationString 
+            verificationString ,
+            otp : `${otp1}+${otp2}+${otp3}+${otp4}`
         }) ;
-
+        
         const {insertedId} = result ;
+
+        const otp = otpGeneration(insertedId) ;
+        
        try{
         await sendEmail({
             to : email ,
             from : process.env.EMAIL_ID,
             subject : 'Please verify your Email',
-            text :`
-                Thank for signing up ! To verify, click here :
-                https://auth-eve8.onrender.com/verify-email/${verificationString}
-            ` 
+            text :`Your Verification OTP is : ${otp}` 
         });
         console.log("Mail sent !") ;
        }catch(err){
@@ -330,7 +351,57 @@ module.exports.GoogleCallBack = async(req,res)=>{
     }
 }
 
-module.exports.VerificationRedirect = async(req,res)=>{
-    console.log("Verification Route");
-    return res.redirect(`${process.env.CLIENT_URL}/verify-email/${req.params.verificationString}`) ;
+module.exports.otpVerification = async(req,res)=>{
+    try{
+        const {authorization} = req.headers ;
+        const {otpparams} = req.params ;
+        
+        if(!authorization){
+            return res.status(401).json({message : "No authorization header sent"}) ;
+        }
+
+        const token = authorization.split(' ')[1] ;
+
+        jwt.verify(token , process.env.JWT_SECRET , async(err , decoded)=>{
+            if(err)
+            return res.status(401).json({message : "Unable to verify token"}) ;
+            
+            const {id} = decoded ;
+
+            const otpAvail = await db.collection('otp').findOne({id}) ;
+
+            if(otpAvail){
+                const expiresIn = Date.getTime() + 10*60000 ;
+
+                if(otpAvail.expiresIn <= expiresIn){
+                    if(otpAvail.otp == otpparams){
+                        const deleteOtp = await db.collection('otp').deleteOne({id});
+                        const result = await db.collection('users').findOneAndUpdate(
+                            { _id : new ObjectId(id) },
+                            { $set:{  isVerified : true }},
+                            {returnOriginal : false}
+                        ) ;
+
+                        const {email  , info , isVerified} = result.value ;
+                        jwt.sign({id , email , isVerified , info} ,process.env.JWT_SECRET , (err, token)=>{
+                            if(err){
+                                return res.status(200).json(err) ;
+                            }
+                            return res.send({token : token ,status : true , message :"Email is Verified" }) ;
+                        })
+                       
+                    }else{
+                        return res.send({status : false , message :"Invalid Otp" }) ;
+                    }
+                }else{
+                    return res.send({status : false , message :"Invalid Otp" }) ;
+                }
+            }else{
+                return res.send({status : false , message :"Invalid Otp" }) ;
+            }
+
+        })
+    }catch(err){
+        console.log(err) ;
+    }
 }

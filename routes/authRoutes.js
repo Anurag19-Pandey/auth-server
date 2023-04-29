@@ -1,5 +1,5 @@
 const express = require("express") ;
-const { SignUp , Login , updateUser , verifyEmail , forgotPassword , resetPassword , googleAuth , GoogleCallBack} = require("../controllers/authControllers");
+const { SignUp , Login , updateUser , verifyEmail , forgotPassword , resetPassword , googleAuth , GoogleCallBack , otpVerification} = require("../controllers/authControllers");
 
 const router = express.Router() ;
 
@@ -16,5 +16,7 @@ router.route("/forgot-password/:email").put(forgotPassword) ;
 router.route("/users/:passwordResetCode/reset-password").put(resetPassword) ;
 
 router.route("/auth/google/url").get(googleAuth) ;
+
+router.route("/otp/:otpparam").post(otpVerification)
 
 module.exports = router ;
