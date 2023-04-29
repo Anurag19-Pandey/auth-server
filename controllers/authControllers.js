@@ -60,7 +60,7 @@ module.exports.SignUp = async(req,res)=>{
             subject : 'Please verify your Email',
             text :`
                 Thank for signing up ! To verify, click here :
-                https://auth-eve8.onrender.com//verify-email/${verificationString}
+                https://auth-eve8.onrender.com/verify-email/${verificationString}
             ` 
         });
         console.log("Mail sent !") ;
